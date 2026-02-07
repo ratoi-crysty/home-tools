@@ -59,5 +59,8 @@
       "style": "scss",
       "unitTestRunner": "none"
     }
+  },
+  "tui": {
+    "enabled": false
   }
 }
