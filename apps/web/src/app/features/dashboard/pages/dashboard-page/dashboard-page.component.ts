@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subject, interval, switchMap, takeUntil, catchError, of, tap } from 'rxjs';
+import { Subject, interval, takeUntil, catchError, of, tap, forkJoin } from 'rxjs';
 import { AppCardComponent } from '../../components/app-card/app-card.component';
 import { AppsService } from '../../services/apps.service';
 import { AppStatus } from '../../models/app.model';
@@ -17,12 +17,14 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
   private readonly destroy$: Subject<void> = new Subject<void>();
   private readonly POLL_INTERVAL = 5000;
 
+  readonly delugeStatus = signal<AppStatus | null>(null);
+  readonly delugeLoading = signal<boolean>(false);
   readonly kodiStatus = signal<AppStatus | null>(null);
   readonly kodiLoading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
-    this.fetchKodiStatus();
+    this.fetchAllStatuses();
     this.startPolling();
   }
 
@@ -33,37 +35,58 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
 
   private startPolling(): void {
     interval(this.POLL_INTERVAL)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.fetchAllStatuses();
+      });
+  }
+
+  private fetchAllStatuses(): void {
+    forkJoin({
+      deluge: this.appsService.getDelugeStatus().pipe(catchError(() => of(null))),
+      kodi: this.appsService.getKodiStatus().pipe(catchError(() => of(null))),
+    })
       .pipe(
-        takeUntil(this.destroy$),
-        switchMap(() => this.appsService.getKodiStatus()),
         catchError((err: unknown) => {
-          console.error('Failed to fetch Kodi status:', err);
-          return of(null);
+          console.error('Failed to fetch app statuses:', err);
+          this.error.set('Failed to connect to server');
+          return of({ deluge: null, kodi: null });
         })
       )
-      .subscribe((status: AppStatus | null) => {
-        if (status) {
-          this.kodiStatus.set(status);
+      .subscribe((statuses: { deluge: AppStatus | null; kodi: AppStatus | null }) => {
+        if (statuses.deluge) {
+          this.delugeStatus.set(statuses.deluge);
+        }
+        if (statuses.kodi) {
+          this.kodiStatus.set(statuses.kodi);
+        }
+        if (statuses.deluge || statuses.kodi) {
           this.error.set(null);
         }
       });
   }
 
-  private fetchKodiStatus(): void {
-    this.appsService
-      .getKodiStatus()
+  onDelugeToggle(): void {
+    const isRunning: boolean = this.delugeStatus()?.running ?? false;
+    this.delugeLoading.set(true);
+
+    const action$ = isRunning
+      ? this.appsService.stopDeluge()
+      : this.appsService.startDeluge();
+
+    action$
       .pipe(
+        tap(() => {
+          setTimeout(() => this.fetchAllStatuses(), 500);
+        }),
         catchError((err: unknown) => {
-          console.error('Failed to fetch Kodi status:', err);
-          this.error.set('Failed to connect to server');
+          console.error('Failed to toggle Deluge:', err);
+          this.error.set('Failed to toggle Deluge');
           return of(null);
         })
       )
-      .subscribe((status: AppStatus | null) => {
-        if (status) {
-          this.kodiStatus.set(status);
-          this.error.set(null);
-        }
+      .subscribe(() => {
+        this.delugeLoading.set(false);
       });
   }
 
@@ -78,7 +101,7 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
     action$
       .pipe(
         tap(() => {
-          setTimeout(() => this.fetchKodiStatus(), 500);
+          setTimeout(() => this.fetchAllStatuses(), 500);
         }),
         catchError((err: unknown) => {
           console.error('Failed to toggle Kodi:', err);

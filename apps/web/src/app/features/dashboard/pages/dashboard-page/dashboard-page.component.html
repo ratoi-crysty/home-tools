@@ -40,6 +40,13 @@
 
       <div class="apps-grid">
         <app-card
+          [status]="delugeStatus()"
+          [loading]="delugeLoading()"
+          [appName]="'Deluge'"
+          [appIcon]="'downloading'"
+          (toggleStatus)="onDelugeToggle()"
+        />
+        <app-card
           [status]="kodiStatus()"
           [loading]="kodiLoading()"
           [appName]="'Kodi'"
