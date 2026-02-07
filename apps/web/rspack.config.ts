@@ -1,4 +1,26 @@
 import { createConfig } from '@nx/angular-rspack';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+interface ProxyEntry {
+  target: string;
+  secure: boolean;
+  changeOrigin: boolean;
+  logLevel?: string;
+}
+
+type ProxyConfig = Record<string, ProxyEntry>;
+
+const proxyConfigPath: string = join(__dirname, 'proxy.conf.json');
+const proxyConfig: ProxyConfig = JSON.parse(readFileSync(proxyConfigPath, 'utf-8')) as ProxyConfig;
+
+const proxySettings: { context: string[]; target: string; secure: boolean; changeOrigin: boolean }[] =
+  Object.entries(proxyConfig).map(([context, config]: [string, ProxyEntry]) => ({
+    context: [context],
+    target: config.target,
+    secure: config.secure,
+    changeOrigin: config.changeOrigin,
+  }));
 
 export default createConfig(
   {
@@ -50,14 +72,7 @@ export default createConfig(
         sourceMap: true,
         namedChunks: true,
         devServer: {
-          proxy: [
-            {
-              context: ['/api'],
-              target: 'http://localhost:3000',
-              secure: false,
-              changeOrigin: true,
-            },
-          ],
+          "proxyConfig": 'proxy.conf.json'
         },
       },
     },
