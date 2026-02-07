@@ -1,0 +1,53 @@
+<mat-card class="app-card" [class.running]="isRunning()" [class.loading]="loading()">
+  <div class="status-strip" [class.active]="isRunning()"></div>
+
+  <div class="card-content">
+    <div class="header">
+      <div class="icon-container" [class.active]="isRunning()">
+        <mat-icon class="app-icon">{{ appIcon() }}</mat-icon>
+        @if (isRunning()) {
+          <div class="pulse-ring"></div>
+        }
+      </div>
+      <div class="title-section">
+        <h3 class="app-name">{{ appName() }}</h3>
+        <div class="status-badge" [class.online]="isRunning()" [class.offline]="!isRunning() && !loading()">
+          @if (loading()) {
+            <mat-spinner diameter="12" class="status-spinner"></mat-spinner>
+          } @else {
+            <span class="status-dot"></span>
+          }
+          <span class="status-text">{{ statusText() }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="metrics">
+      @if (pid()) {
+        <div class="metric">
+          <span class="metric-label">PID</span>
+          <span class="metric-value">{{ pid() }}</span>
+        </div>
+      }
+      <div class="metric">
+        <span class="metric-label">STATUS</span>
+        <span class="metric-value" [class.active]="isRunning()">{{ isRunning() ? 'ACTIVE' : 'IDLE' }}</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button
+        mat-flat-button
+        class="toggle-btn"
+        [class.stop]="isRunning()"
+        [disabled]="loading()"
+        (click)="onToggle()"
+      >
+        <mat-icon>{{ isRunning() ? 'stop' : 'play_arrow' }}</mat-icon>
+        <span>{{ isRunning() ? 'STOP' : 'START' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="scan-line"></div>
+</mat-card>

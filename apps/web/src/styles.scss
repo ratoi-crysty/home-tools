@@ -1,1 +1,45 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import '@angular/material/prebuilt-themes/azure-blue.css';
+
+:root {
+  --bg-dark: #0a0e14;
+  --bg-surface: #0d1117;
+  --bg-card: #111820;
+  --border-color: #1e2a3a;
+  --text-primary: #e6edf3;
+  --text-secondary: #7d8590;
+  --accent-blue: #2f81f7;
+  --accent-cyan: #39c5cf;
+  --accent-green: #3fb950;
+  --accent-red: #f85149;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Angular Material dark theme overrides */
+.mat-mdc-card {
+  --mdc-elevated-card-container-color: var(--bg-card);
+}
+
+.mat-mdc-button,
+.mat-mdc-outlined-button,
+.mat-mdc-unelevated-button {
+  --mdc-filled-button-container-color: var(--accent-blue);
+}
+
+.mdc-text-field--filled:not(.mdc-text-field--disabled) {
+  background-color: var(--bg-surface);
+}

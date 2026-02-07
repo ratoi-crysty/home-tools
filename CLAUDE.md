@@ -158,3 +158,7 @@ The NestJS backend will provide REST APIs for:
   - Custom animations
   - Complex layouts not covered by Flexbox/Grid
   - Specific design requirements not covered by Angular Material
+
+### Design
+- The design should mainly be focused on dark theme
+- The theme should be a blueish 
