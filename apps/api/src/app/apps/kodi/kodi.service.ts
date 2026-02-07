@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ShellService } from '@home-tools/shared-api';
+import { ShellService, SpawnResult } from '@home-tools/shared-api';
 import { AppStatusResponse } from '../models/app-status.model';
 import { AppActionResponse } from '../models/app-action.model';
 import { KODI_APP_ID, KODI_PROCESS_NAME, KODI_EXECUTABLE } from './kodi.constants';
@@ -42,13 +42,24 @@ export class KodiService {
     }
 
     this.logger.log('Starting Kodi');
-    this.shellService.spawnDetached(KODI_EXECUTABLE);
+    const spawnResult: SpawnResult = await this.shellService.spawnDetached(KODI_EXECUTABLE);
+
+    if (!spawnResult.success) {
+      this.logger.error(`Failed to start Kodi: ${spawnResult.error}`);
+      return {
+        appId: KODI_APP_ID,
+        action: 'start',
+        success: false,
+        message: spawnResult.error ?? 'Failed to start Kodi',
+        timestamp: new Date().toISOString(),
+      };
+    }
 
     return {
       appId: KODI_APP_ID,
       action: 'start',
       success: true,
-      message: 'Kodi start command executed',
+      message: 'Kodi started successfully',
       timestamp: new Date().toISOString(),
     };
   }
@@ -67,13 +78,15 @@ export class KodiService {
     }
 
     this.logger.log('Stopping Kodi');
-    const result: { success: boolean } = await this.shellService.execute(`pkill -x ${KODI_PROCESS_NAME}`);
+    const result: { success: boolean; error?: string } = await this.shellService.execute(
+      `pkill -x ${KODI_PROCESS_NAME}`
+    );
 
     return {
       appId: KODI_APP_ID,
       action: 'stop',
       success: result.success,
-      message: result.success ? 'Kodi stopped successfully' : 'Failed to stop Kodi',
+      message: result.success ? 'Kodi stopped successfully' : (result.error ?? 'Failed to stop Kodi'),
       timestamp: new Date().toISOString(),
     };
   }
